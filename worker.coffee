@@ -19,7 +19,6 @@ class TimeOut
 class Worker
   @current_job = null
   @queue = "jobs"
-  self = this
 
   constructor: (@id, @redis_client, @queue) ->
 
