@@ -19,6 +19,7 @@ class TimeOut
 class Worker
   @current_job = null
   @queue = "jobs"
+  self = this
 
   constructor: (@id, @redis_client, @queue) ->
 
@@ -34,24 +35,26 @@ class Worker
     this.current_job.job_start_time = this._getTime()
     actor.perform(this.current_job.params, this.grabNext, this) if actor
 
-  grabNext: (that) ->
-    that.current_job.job_end_time = that._getTime()
-    console.log(that.id + ' - finished job', that.current_job)
+  grabNext: (self) ->
+    self.current_job.job_end_time = self._getTime()
+    console.log(self.id + ' - finished job', self.current_job)
 
-    that.grab()
+    self.grab()
+
   grab: ->
-    that = this
-    console.log( that.id + ' - looking for work!')
-    @redis_client.llen that.queue, (err, num_pending_jobs) ->
-      if num_pending_jobs > 0
-        that.redis_client.lpop that.queue, (err, job_json) ->
-          console.log 'grabbing a job', job_json
-          that.current_job = JSON.parse job_json
+    self = @
 
-          that.runJob()
+    console.log( self.id + ' - looking for work!')
+    @redis_client.llen self.queue, (err, num_pending_jobs) ->
+      if num_pending_jobs > 0
+        self.redis_client.lpop self.queue, (err, job_json) ->
+          console.log 'grabbing a job', job_json
+          self.current_job = JSON.parse job_json
+
+          self.runJob()
       else
-        console.log(that.id + ' - appending self back to idle_workers')
-        idle_workers.push that
+        console.log(self.id + ' - appending self back to idle_workers')
+        idle_workers.push self
 
 
 listener.on "message", (ch, msg) ->
