@@ -2,11 +2,12 @@ redis = require "redis"
 worker = redis.createClient()
 listener = redis.createClient()
 adder = redis.createClient()
-worker_busy = false
 
 express = require "express"
 app = express.createServer()
 port = process.env.PORT or 3000
+max_workers = 2
+workers_busy = 0
 
 app.get "/", (req, res) ->
   res.send "hello world"
@@ -28,12 +29,12 @@ worker.grab = (queue) ->
         console.log 'getting job'
         worker.perform link, queue
     else
-      worker_busy = false
+      workers_busy -= 1
 
 
 listener.on "message", (ch, msg) ->
-  if ch is "new job" and !worker_busy
-    worker_busy = true
+  if ch is "new job" and workers_busy <= max_workers
+    workers_busy += 1
     worker.grab( msg )
 
 listener.subscribe "new job"
