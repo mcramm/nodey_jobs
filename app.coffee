@@ -1,22 +1,23 @@
 redis = require "redis"
 worker = redis.createClient()
 listener = redis.createClient()
-adder = redis.createClient()
+client = redis.createClient()
 
 express = require "express"
 app = express.createServer()
 port = process.env.PORT or 3000
-max_workers = 2
+max_workers = 6
 workers_busy = 0
 
 app.get "/", (req, res) ->
   res.send "hello world"
-  adder.rpush "jobs", "http://google.com"
-  adder.publish "new job", "jobs"
+  client.rpush "jobs", "http://google.com"
+  client.publish "new job", "jobs"
 
 app.listen(port)
 
 worker.perform = (link, queue) ->
+  # setTimeout is used for testing
   setTimeout ->
     console.log "processed: " + link
     worker.grab queue
