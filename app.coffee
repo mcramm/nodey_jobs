@@ -6,11 +6,11 @@ client = redis.createClient()
 express = require "express"
 app = express.createServer()
 port = process.env.PORT or 3000
-max_workers = 6
+max_workers = 1
 workers_busy = 0
 
 app.get "/", (req, res) ->
-  res.send "hello world"
+  res.send "job added to queue"
   client.rpush "jobs", "http://google.com"
   client.publish "new job", "jobs"
 
