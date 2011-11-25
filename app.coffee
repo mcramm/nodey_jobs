@@ -6,3 +6,5 @@ manager.add_queue('jobs', 3)
 
 manager.start()
 
+enqueuer = require("./enqueuer.coffee").create()
+enqueuer.start()

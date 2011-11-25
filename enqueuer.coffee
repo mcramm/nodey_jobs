@@ -13,13 +13,19 @@ job = {
   job_end_time: null
 }
 
-app.get "/", (req, res) ->
-  res.send "job added to queue"
-  console.log('adding job!')
-  job.queued_time = new Date().getTime()
-  console.log(job)
-  console.log(JSON.stringify(job))
-  client.rpush "jobs", JSON.stringify job
-  client.publish "new job", "jobs"
+class Enqueuer
 
-app.listen(port)
+  start: ->
+    app.get "/", (req, res) ->
+      res.send "job added to queue"
+      console.log('adding job!')
+      job.queued_time = new Date().getTime()
+      console.log(job)
+      console.log(JSON.stringify(job))
+      client.rpush "jobs", JSON.stringify job
+      client.publish "new job", "jobs"
+
+    app.listen(port)
+
+exports.create = ->
+  new Enqueuer
