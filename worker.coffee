@@ -1,10 +1,6 @@
-redis = require "redis"
-worker_client = redis.createClient()
-listener = redis.createClient()
-
-num_of_workers = 3 # used to control to number of created workers
-idle_workers = []
-
+###
+# TimeOut is used for testing. It is the only 'actor'
+###
 class TimeOut
   perform: (params, callback, that) ->
     self = this
@@ -18,7 +14,7 @@ class TimeOut
 
 class Worker
   @current_job = null
-  @queue = "jobs"
+  @queue = {}
 
   constructor: (@id, @redis_client, @queue) ->
 
@@ -44,32 +40,24 @@ class Worker
     self = @
 
     console.log( self.id + ' - looking for work!')
-    @redis_client.llen self.queue, (err, num_pending_jobs) ->
+    @redis_client.llen self.queue.name, (err, num_pending_jobs) ->
       if num_pending_jobs > 0
-        self.redis_client.lpop self.queue, (err, job_json) ->
-          console.log 'grabbing a job', job_json
-          self.current_job = JSON.parse job_json
+        self.redis_client.lpop self.queue.name, (err, job_json) ->
+          if job_json is null
+            console.log(self.id, 'idling (job is null)')
+            self.idle()
+          else
+            console.log 'grabbing a job', job_json
+            self.current_job = JSON.parse job_json
 
-          self.runJob()
+            self.runJob()
       else
-        console.log(self.id + ' - appending self back to idle_workers')
-        idle_workers.push self
+        console.log(self.id, 'idling (no jobs)')
+        self.idle()
 
+  idle: ->
+    console.log(this.id + ' - appending self back to idle_workers')
+    @queue.idle_workers.push this
 
-listener.on "message", (ch, msg) ->
-  if idle_workers.length > 0
-    worker = idle_workers.pop()
-    worker.grab()
-
-worker_id = 0
-until worker_id is num_of_workers
-  idle_workers.push new Worker(worker_id, worker_client, "jobs")
-  console.log( 'worker ' + worker_id + ' added')
-  worker_id += 1
-
-idle_workers.pop().grab()
-
-console.log 'subscribing to new job channel'
-listener.subscribe "new job"
-
-console.log 'ready'
+exports.create = (id, worker_client, queue) ->
+  new Worker(id, worker_client, queue)
