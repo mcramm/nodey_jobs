@@ -10,7 +10,8 @@ job = {
   params: { time: 1000 },
   queued_time: null,
   job_start_time: null,
-  job_end_time: null
+  job_end_time: null,
+  status: "waiting"
 }
 
 class Enqueuer

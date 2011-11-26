@@ -21,21 +21,6 @@ class Worker
   _getTime: ->
     new Date().getTime()
 
-  runJob: ->
-    try
-      actor = eval "new " + this.current_job.actor
-    catch error
-      console.log "there was an error creating the actor", error
-
-    this.current_job.job_start_time = this._getTime()
-    actor.perform(this.current_job.params, this.grabNext, this) if actor
-
-  grabNext: (self) ->
-    self.current_job.job_end_time = self._getTime()
-    console.log(self.id + ' - finished job', self.current_job)
-
-    self.grab()
-
   grab: ->
     self = @
 
@@ -50,7 +35,7 @@ class Worker
             console.log 'grabbing a job', job_json
             self.current_job = JSON.parse job_json
 
-            self.runJob()
+            self._runJob()
       else
         console.log(self.id, 'idling (no jobs)')
         self.idle()
@@ -58,6 +43,33 @@ class Worker
   idle: ->
     console.log(this.id + ' - appending self back to idle_workers')
     @queue.idle_workers.push this
+
+  _runJob: ->
+    try
+      actor = eval "new " + this.current_job.actor
+      this.current_job.job_start_time = this._getTime()
+      actor.perform(this.current_job.params, this._succeedJob, this) if actor
+    catch error
+      console.log "there was an error creating the actor", error
+      this._fail_job()
+
+  _succeedJob: (self) ->
+    self.current_job.status = "success"
+    self._finish_job()
+
+  _fail_job: ->
+    this.current_job.status = "failed"
+    this.finish_job()
+
+  _finish_job: ->
+    this.current_job.job_end_time = this._getTime()
+
+    console.log(this.id + ' - finished job', this.current_job)
+
+    job_json = JSON.stringify this.current_job
+    this.redis_client.rpush this.queue.name + "_finished", job_json
+
+    this.grab()
 
 exports.create = (id, worker_client, queue) ->
   new Worker(id, worker_client, queue)
