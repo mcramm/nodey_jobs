@@ -1,10 +1,20 @@
-redis = require "redis"
-listener = redis.createClient()
+fs = require 'fs'
 
-manager = require("./lib/manager.coffee").create(listener)
-manager.add_queue('jobs', 3)
+fileContents = fs.readFileSync('./config.json','utf8');
+config = JSON.parse fileContents
+
+process.env.redis_host = config.redis.host
+process.env.redis_port = config.redis.port
+
+redis = require "redis"
+listener = redis.createClient(process.env.redis_port, process.env.redis_host)
+
+manager = require("./lib/manager.coffee").create(listener, config.new_job_channel)
+
+for queue in config.queues
+  manager.add_queue(queue.name, queue.workers)
 
 manager.start()
 
-enqueuer = require("./lib/enqueuer.coffee").create()
+enqueuer = require("./lib/enqueuer.coffee").create(config.web_server.port, config.new_job_channel)
 enqueuer.start()

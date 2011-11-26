@@ -1,7 +1,7 @@
 q = require "./queue.coffee"
 
 class Manager
-  constructor: (@listener) ->
+  constructor: (@listener, @new_job_ch) ->
     @queues = {}
     @current_worker_id = 0
 
@@ -20,11 +20,11 @@ class Manager
   start: ->
     self = @
     @listener.on "message", (channel, queue_name) ->
-      return if channel isnt "new job"
+      return if channel isnt self.new_job_ch
       queue = self.queues[queue_name]
       queue.trigger_worker()
 
-    @listener.subscribe "new job"
+    @listener.subscribe self.new_job_ch
 
-exports.create = (listener) ->
-  new Manager(listener)
+exports.create = (listener, new_job_ch) ->
+  new Manager(listener, new_job_ch)

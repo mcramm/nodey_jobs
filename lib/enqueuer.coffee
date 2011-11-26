@@ -1,9 +1,8 @@
 redis = require "redis"
-client = redis.createClient()
+client = redis.createClient process.env.redis_port, process.env.redis_host
 
 express = require "express"
 app = express.createServer()
-port = process.env.PORT or 3000
 
 job = {
   actor: "TimeOut",
@@ -16,17 +15,20 @@ job = {
 
 class Enqueuer
 
+  constructor: (@port, @new_job_ch) ->
+    @app = express.createServer()
+
   start: ->
-    app.get "/", (req, res) ->
+    self = @
+    @app.get "/", (req, res) ->
       res.send "job added to queue"
-      console.log('adding job!')
       job.queued_time = new Date().getTime()
-      console.log(job)
       console.log(JSON.stringify(job))
       client.rpush "jobs", JSON.stringify job
-      client.publish "new job", "jobs"
+      console.log('pinging ' + self.new_job_ch)
+      client.publish self.new_job_ch, "jobs"
 
-    app.listen(port)
+    @app.listen(@port)
 
-exports.create = ->
-  new Enqueuer
+exports.create  = (port, new_job_ch) ->
+  new Enqueuer(port, new_job_ch)

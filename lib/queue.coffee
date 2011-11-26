@@ -1,5 +1,6 @@
 redis = require "redis"
-worker_client = redis.createClient()
+worker_client = redis.createClient process.env.redis_port, process.env.redis_host
+
 w = require './worker.coffee'
 
 class Queue
