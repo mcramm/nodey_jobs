@@ -5,7 +5,6 @@ class TimeOut
   perform: (params, callback, that) ->
     self = this
     setTimeout ->
-      console.log self._getString()
       callback that
     , params.time
 
@@ -22,27 +21,27 @@ class Worker
     new Date().getTime()
 
   grab: ->
-    self = @
+    self = this
 
-    console.log( self.id + ' - looking for work!')
     @redis_client.llen self.queue.name, (err, num_pending_jobs) ->
       if num_pending_jobs > 0
-        self.redis_client.lpop self.queue.name, (err, job_json) ->
-          if job_json is null
-            console.log(self.id, 'idling (job is null)')
-            self.idle()
-          else
-            console.log 'grabbing a job', job_json
-            self.current_job = JSON.parse job_json
-
-            self._runJob()
+        self._popJob()
       else
-        console.log(self.id, 'idling (no jobs)')
         self.idle()
 
   idle: ->
-    console.log(this.id + ' - appending self back to idle_workers')
     @queue.idle_workers.push this
+
+  _popJob: ->
+    self = this
+
+    this.redis_client.lpop this.queue.name, (err, job_json) ->
+      if job_json is null
+        self.idle()
+      else
+        self.current_job = JSON.parse job_json
+
+        self._runJob()
 
   _runJob: ->
     try
@@ -51,25 +50,23 @@ class Worker
       actor.perform(this.current_job.params, this._succeedJob, this) if actor
     catch error
       console.log "there was an error creating the actor", error
-      this._fail_job()
+      this._failJob()
 
   _succeedJob: (self) ->
     self.current_job.status = "success"
-    self._finish_job()
+    self._finishJob()
 
-  _fail_job: ->
+  _failJob: ->
     this.current_job.status = "failed"
-    this.finish_job()
+    this._finishJob()
 
-  _finish_job: ->
+  _finishJob: ->
     this.current_job.job_end_time = this._getTime()
-
-    console.log(this.id + ' - finished job', this.current_job)
-
-    job_json = JSON.stringify this.current_job
-    this.redis_client.rpush this.queue.name + "_finished", job_json
-
+    this.redis_client.rpush this.queue.name + "_finished", this._getCurrentJobJson()
     this.grab()
+
+  _getCurrentJobJson: ->
+    JSON.stringify this.current_job
 
 exports.create = (id, redis_client, queue) ->
   new Worker(id, redis_client, queue)
