@@ -2,11 +2,11 @@ class Queue
   constructor: (@name, @worker_client) ->
     @idle_workers = []
 
-  add_worker: (id) ->
+  addWorker: (id) ->
     worker = require("./worker.coffee").create(id, @worker_client, this)
     worker.grab()
 
-  trigger_worker: ->
+  triggerWorker: ->
     return if @idle_workers.length is 0
     worker = @idle_workers.pop()
     worker.grab()

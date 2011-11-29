@@ -13,7 +13,7 @@ worker_client = redis.createClient process.env.redis_port, process.env.redis_hos
 manager = require("./lib/manager.coffee").create(listener, worker_client, config.new_job_channel)
 
 for queue in config.queues
-  manager.add_queue(queue.name, queue.workers)
+  manager.addQueue(queue.name, queue.workers)
 
 manager.start()
 

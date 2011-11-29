@@ -17,9 +17,6 @@ class Worker
 
   constructor: (@id, @redis_client, @queue) ->
 
-  _getTime: ->
-    new Date().getTime()
-
   grab: ->
     self = this
 
@@ -64,6 +61,9 @@ class Worker
     this.current_job.job_end_time = this._getTime()
     this.redis_client.rpush this.queue.name + "_finished", this._getCurrentJobJson()
     this.grab()
+
+  _getTime: ->
+    new Date().getTime()
 
   _getCurrentJobJson: ->
     JSON.stringify this.current_job
