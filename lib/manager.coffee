@@ -1,12 +1,10 @@
-q = require "./queue.coffee"
-
 class Manager
-  constructor: (@listener, @new_job_ch) ->
+  constructor: (@listener, @worker_client, @new_job_ch) ->
     @queues = {}
     @current_worker_id = 0
 
   add_queue: (name, num_workers) ->
-    queue = q.create(name)
+    queue = require("./queue.coffee").create(name, @worker_client)
 
     worker_count = 0
     until worker_count is num_workers
@@ -26,5 +24,5 @@ class Manager
 
     @listener.subscribe self.new_job_ch
 
-exports.create = (listener, new_job_ch) ->
-  new Manager(listener, new_job_ch)
+exports.create = (listener, worker_client, new_job_ch) ->
+  new Manager(listener, worker_client, new_job_ch)

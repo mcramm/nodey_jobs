@@ -71,5 +71,5 @@ class Worker
 
     this.grab()
 
-exports.create = (id, worker_client, queue) ->
-  new Worker(id, worker_client, queue)
+exports.create = (id, redis_client, queue) ->
+  new Worker(id, redis_client, queue)
