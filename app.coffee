@@ -1,15 +1,12 @@
-fs = require 'fs'
 redis = require "redis"
 
-fileContents = fs.readFileSync('./config.json','utf8')
-config = JSON.parse fileContents
+config = require("./lib/configParser.coffee").parse("./config.json")
 
 process.env.redis_host = config.redis.host
 process.env.redis_port = config.redis.port
 
 new_redis_connection = ->
   redis.createClient(process.env.redis_port, process.env.redis_host)
-
 
 listener = new_redis_connection()
 worker_client = new_redis_connection()
