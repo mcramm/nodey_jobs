@@ -4,15 +4,11 @@ fs = require "fs"
 config_parser = require("./lib/configParser.coffee").create(fs, "./config.json")
 config = config_parser.parse()
 
-process.env.redis_host = config.redis.host
-process.env.redis_port = config.redis.port
+redis_connection_manager = require("./lib/redisConnectionManager.coffee").create(redis, config.redis)
 
-new_redis_connection = ->
-  redis.createClient(process.env.redis_port, process.env.redis_host)
-
-listener = new_redis_connection()
-worker_client = new_redis_connection()
-enqueuer_client = new_redis_connection()
+listener = redis_connection_manager.create()
+worker_client = redis_connection_manager.create()
+enqueuer_client = redis_connection_manager.create()
 
 manager = require("./lib/manager.coffee").create(listener, worker_client, config.new_job_channel)
 
