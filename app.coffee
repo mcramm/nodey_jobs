@@ -1,6 +1,8 @@
 redis = require "redis"
+fs = require "fs"
 
-config = require("./lib/configParser.coffee").parse("./config.json")
+config_parser = require("./lib/configParser.coffee").create(fs, "./config.json")
+config = config_parser.parse()
 
 process.env.redis_host = config.redis.host
 process.env.redis_port = config.redis.port

@@ -1,5 +1,5 @@
 class ConfigParser
-  constructor: (@file_name, @fs) ->
+  constructor: (@fs, @file_name) ->
     @config = null
 
   parse: (force) ->
@@ -8,10 +8,5 @@ class ConfigParser
     fileContents = @fs.readFileSync(@file_name, 'utf8')
     @config = JSON.parse fileContents
 
-exports.create = (file_name, fs) ->
-  new ConfigParser(file_name, fs)
-
-exports.parse = (file_name) ->
-  fs = require "fs"
-  config_parser = new ConfigParser(file_name, fs)
-  config_parser.parse()
+exports.create = (fs, file_name) ->
+  new ConfigParser(fs, file_name)
