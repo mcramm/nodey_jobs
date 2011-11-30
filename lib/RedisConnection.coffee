@@ -1,4 +1,4 @@
-class RedisConnectionManager
+class RedisConnection
   constructor: (@redis, @config) ->
 
   create: ->
@@ -6,4 +6,4 @@ class RedisConnectionManager
 
 
 exports.create = (redis, config) ->
-  new RedisConnectionManager(redis, config)
+  new RedisConnection(redis, config)
